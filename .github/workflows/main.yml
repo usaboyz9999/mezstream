@@ -1,1 +1,99 @@
+name: MezStream CI/CD
 
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+
+  # ══════════════════════════════════════════════════════
+  # 1. فحص الكود
+  # ══════════════════════════════════════════════════════
+  lint:
+    name: فحص الكود
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: تثبيت المكتبات
+        run: npm install
+
+      - name: فحص الأخطاء
+        run: npx expo-doctor || true
+
+  # ══════════════════════════════════════════════════════
+  # 2. بناء APK للأندرويد
+  # ══════════════════════════════════════════════════════
+  build-android:
+    name: بناء Android APK
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: تثبيت المكتبات
+        run: npm install
+
+      - name: تثبيت EAS CLI
+        run: npm install -g eas-cli
+
+      - name: تسجيل الدخول في Expo
+        run: npx eas-cli whoami
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: بناء APK
+        run: npx eas-cli build --platform android --profile preview --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+  # ══════════════════════════════════════════════════════
+  # 3. بناء AAB للنشر على Google Play
+  # ══════════════════════════════════════════════════════
+  build-android-production:
+    name: بناء Android AAB (Production)
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: تثبيت المكتبات
+        run: npm install
+
+      - name: تثبيت EAS CLI
+        run: npm install -g eas-cli
+
+      - name: تسجيل الدخول في Expo
+        run: npx eas-cli whoami
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: بناء AAB للإنتاج
+        run: npx eas-cli build --platform android --profile production --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
