@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "MezStream",
+    "slug": "mezstream",
+    "version": "1.1.2",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0d0b1e",
+    "owner": "jewepi6823",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "backgroundColor": "#0d0b1e",
+      "resizeMode": "contain"
+    },
+    "android": {
+      "package": "com.mezstream.app",
+      "versionCode": 6,
+      "backgroundColor": "#0d0b1e",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d0b1e"
+      },
+      "minSdkVersion": 24
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "newArchEnabled": false,
+    "jsEngine": "hermes",
+    "extra": {
+      "eas": {
+        "projectId": "6587ead0-05f8-44b1-a129-495fa59fad00"
+      }
+    }
+  }
+}
