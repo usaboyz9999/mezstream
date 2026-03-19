@@ -44,9 +44,10 @@
     "plugins": [
       "expo-video"
     ],
+    "owner": "alisameer2",
     "extra": {
       "eas": {
-        "projectId": "6587ead0-05f8-44b1-a129-495fa59fad00"
+        "projectId": "69dd49aa-b5da-4d7f-8a82-883132946963"
       }
     }
   }
