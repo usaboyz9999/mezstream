@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "MezStream",
+    "slug": "mezstream",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0d0b1e"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mezstream.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d0b1e"
+      },
+      "package": "com.mezstream.app",
+      "versionCode": 1,
+      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
+      "intentFilters": [
+        {
+          "action": "android.intent.action.MAIN",
+          "category": ["android.intent.category.LEANBACK_LAUNCHER"]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "owner": "alisameer2",
+    "extra": {
+      "eas": {
+        "projectId": "69dd49aa-b5da-4d7f-8a82-883132946963"
+      }
+    }
+  }
+}
