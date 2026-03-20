@@ -41,10 +41,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "owner": "alisameer2",
+    "owner": "alisameer22",
     "extra": {
       "eas": {
-        "projectId": "69dd49aa-b5da-4d7f-8a82-883132946963"
+        "projectId": "ce0ffb65-ac34-4d72-9682-43c26ae0c24e"
       }
     }
   }
