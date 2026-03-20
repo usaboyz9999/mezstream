@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   StatusBar, BackHandler, ActivityIndicator,
 } from 'react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,13 +16,15 @@ export default function PlayerScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { isLandscape, isTV } = useLayout();
 
+  const videoRef = useRef(null);
+  const hideTimer = useRef(null);
+
   const [showControls, setShowControls] = useState(true);
   const [isPlaying, setIsPlaying]       = useState(true);
   const [isMuted, setIsMuted]           = useState(false);
   const [isBuffering, setIsBuffering]   = useState(true);
   const [hasError, setHasError]         = useState(false);
   const [errorMsg, setErrorMsg]         = useState('');
-  const hideTimer = useRef(null);
 
   useEffect(() => {
     if (item) addToHistory(item);
@@ -47,61 +49,43 @@ export default function PlayerScreen({ route, navigation }) {
     return () => clearTimeout(hideTimer.current);
   }, []);
 
-  const player = useVideoPlayer(
-    item?.streamUrl ? { uri: item.streamUrl } : null,
-    (p) => {
-      p.loop = false;
-      p.muted = false;
-      p.play();
+  const togglePlay = async () => {
+    if (!videoRef.current) return;
+    const status = await videoRef.current.getStatusAsync();
+    if (status.isPlaying) {
+      await videoRef.current.pauseAsync();
+    } else {
+      await videoRef.current.playAsync();
     }
-  );
-
-  useEffect(() => {
-    if (!player) return;
-
-    const statusSub = player.addListener('statusChange', ({ status }) => {
-      if (status === 'readyToPlay') {
-        setIsBuffering(false);
-        setHasError(false);
-      }
-      if (status === 'loading') {
-        setIsBuffering(true);
-      }
-      if (status === 'error') {
-        setIsBuffering(false);
-        setHasError(true);
-        setErrorMsg('تعذّر تشغيل البث — تحقق من الرابط أو اتصال الإنترنت');
-      }
-    });
-
-    const playingSub = player.addListener('playingChange', ({ isPlaying: playing }) => {
-      setIsPlaying(playing);
-    });
-
-    return () => {
-      statusSub?.remove();
-      playingSub?.remove();
-    };
-  }, [player]);
-
-  const togglePlay = () => {
-    if (!player) return;
-    if (player.playing) player.pause();
-    else player.play();
     resetHideTimer();
   };
 
-  const toggleMute = () => {
-    if (!player) return;
-    player.muted = !isMuted;
+  const toggleMute = async () => {
+    if (!videoRef.current) return;
+    await videoRef.current.setIsMutedAsync(!isMuted);
     setIsMuted(m => !m);
     resetHideTimer();
   };
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
+    if (!videoRef.current) return;
     setHasError(false);
     setIsBuffering(true);
-    player?.play();
+    await videoRef.current.replayAsync();
+  };
+
+  const onPlaybackStatusUpdate = (status) => {
+    if (!status.isLoaded) {
+      if (status.error) {
+        setHasError(true);
+        setIsBuffering(false);
+        setErrorMsg('تعذّر تشغيل البث — تحقق من الرابط أو اتصال الإنترنت');
+      }
+      return;
+    }
+    setIsBuffering(status.isBuffering);
+    setIsPlaying(status.isPlaying);
+    setHasError(false);
   };
 
   // ── لا يوجد محتوى ──
@@ -156,13 +140,20 @@ export default function PlayerScreen({ route, navigation }) {
     <View style={s.root}>
       <StatusBar hidden />
 
-      <VideoView
-        player={player}
+      <Video
+        ref={videoRef}
+        source={{ uri: item.streamUrl }}
         style={StyleSheet.absoluteFill}
-        contentFit={isTV || isLandscape ? 'contain' : 'cover'}
-        nativeControls={false}
-        allowsFullscreen={false}
-        allowsPictureInPicture={false}
+        resizeMode={isTV || isLandscape ? ResizeMode.CONTAIN : ResizeMode.COVER}
+        shouldPlay={true}
+        isMuted={isMuted}
+        isLooping={false}
+        onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+        onError={() => {
+          setHasError(true);
+          setIsBuffering(false);
+          setErrorMsg('تعذّر تشغيل البث — تحقق من الرابط أو اتصال الإنترنت');
+        }}
       />
 
       <TouchableOpacity
@@ -198,42 +189,27 @@ export default function PlayerScreen({ route, navigation }) {
             {/* شريط علوي */}
             <LinearGradient
               colors={['rgba(0,0,0,0.85)', 'transparent']}
-              style={[
-                s.topBar,
-                { paddingTop: insets.top + (isTV ? 20 : 10) },
-              ]}
+              style={[s.topBar, { paddingTop: insets.top + (isTV ? 20 : 10) }]}
             >
-              {/* زر رجوع */}
               <TouchableOpacity
                 style={[s.ctrlBtn, isTV && s.ctrlBtnTV]}
                 onPress={() => navigation.goBack()}
               >
-                <Ionicons
-                  name="chevron-back"
-                  size={isTV ? 32 : 26}
-                  color="#fff"
-                />
+                <Ionicons name="chevron-back" size={isTV ? 32 : 26} color="#fff" />
               </TouchableOpacity>
 
-              {/* اسم القناة */}
               <View style={s.titleArea}>
-                <Text
-                  style={[s.channelName, isTV && { fontSize: 22 }]}
-                  numberOfLines={1}
-                >
+                <Text style={[s.channelName, isTV && { fontSize: 22 }]} numberOfLines={1}>
                   {item.nameAr || item.name}
                 </Text>
                 {item.isLive && (
                   <View style={s.livePill}>
                     <View style={s.liveDot} />
-                    <Text style={[s.liveTxt, isTV && { fontSize: 14 }]}>
-                      مباشر
-                    </Text>
+                    <Text style={[s.liveTxt, isTV && { fontSize: 14 }]}>مباشر</Text>
                   </View>
                 )}
               </View>
 
-              {/* كتم الصوت */}
               <TouchableOpacity
                 style={[s.ctrlBtn, isTV && s.ctrlBtnTV]}
                 onPress={toggleMute}
@@ -246,7 +222,7 @@ export default function PlayerScreen({ route, navigation }) {
               </TouchableOpacity>
             </LinearGradient>
 
-            {/* زر تشغيل / إيقاف في المنتصف */}
+            {/* زر تشغيل / إيقاف */}
             {!isBuffering && !hasError && (
               <View style={s.centerArea}>
                 <TouchableOpacity
@@ -265,17 +241,11 @@ export default function PlayerScreen({ route, navigation }) {
             {/* شريط سفلي */}
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.85)']}
-              style={[
-                s.bottomBar,
-                { paddingBottom: insets.bottom + (isTV ? 24 : 14) },
-              ]}
+              style={[s.bottomBar, { paddingBottom: insets.bottom + (isTV ? 24 : 14) }]}
             >
-              {/* جودة */}
               <Text style={[s.qualityBadge, isTV && { fontSize: 16 }]}>
                 {item.quality || 'HD'}
               </Text>
-
-              {/* في وضع TV أو أفقي: نضيف اسم القناة في الأسفل */}
               {(isTV || isLandscape) && (
                 <Text style={s.bottomTitle} numberOfLines={1}>
                   {item.nameAr || item.name}
@@ -295,8 +265,6 @@ const s = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-
-  // ── Buffering ──
   bufferLayer: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -309,8 +277,6 @@ const s = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-
-  // ── Error ──
   errorLayer: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -347,8 +313,6 @@ const s = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
-
-  // ── Top Bar ──
   topBar: {
     position: 'absolute',
     top: 0,
@@ -407,8 +371,6 @@ const s = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
   },
-
-  // ── Center Play ──
   centerArea: {
     position: 'absolute',
     top: 0,
@@ -433,8 +395,6 @@ const s = StyleSheet.create({
     height: 110,
     borderRadius: 55,
   },
-
-  // ── Bottom Bar ──
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -459,8 +419,6 @@ const s = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
   },
-
-  // ── No URL Screen ──
   backFloating: {
     position: 'absolute',
     left: 16,
@@ -503,8 +461,6 @@ const s = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
-
-  // ── No Item Screen ──
   errBigTitle: {
     color: '#ef4444',
     fontSize: 18,
