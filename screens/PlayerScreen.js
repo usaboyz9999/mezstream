@@ -185,7 +185,6 @@ export default function PlayerScreen({ route, navigation }) {
         {showControls && (
           <View style={StyleSheet.absoluteFill}>
 
-            {/* شريط علوي */}
             <LinearGradient
               colors={['rgba(0,0,0,0.85)', 'transparent']}
               style={[s.topBar, { paddingTop: insets.top + (isTV ? 20 : 10) }]}
@@ -221,7 +220,6 @@ export default function PlayerScreen({ route, navigation }) {
               </TouchableOpacity>
             </LinearGradient>
 
-            {/* زر تشغيل / إيقاف */}
             {!isBuffering && !hasError && (
               <View style={s.centerArea}>
                 <TouchableOpacity
@@ -237,7 +235,6 @@ export default function PlayerScreen({ route, navigation }) {
               </View>
             )}
 
-            {/* شريط سفلي */}
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.85)']}
               style={[s.bottomBar, { paddingBottom: insets.bottom + (isTV ? 24 : 14) }]}
