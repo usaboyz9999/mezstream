@@ -41,9 +41,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-video"
-    ],
     "owner": "alisameer2",
     "extra": {
       "eas": {
